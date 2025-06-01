@@ -11,7 +11,7 @@ end
 
 function init_patterns()
   -- we are creating 8 pattern slots
-  debug = true
+  debug = false
   monitor_inputs = false
   -- _norns.vu outputs values from 0 to 63, but doesn't account for clipping, so we set a reasonable max value
   max_amp = 40
@@ -36,29 +36,55 @@ end
 
 function redraw()
   print_pattern_status()
-  
-  if (debug) then
-    screen.move(64, 7)
-    screen.text("Channel 1: " .. input_levels.l)
-    screen.move(64, 14)
-    screen.text("Channel 2: " .. input_levels.r)
-  end
-  
+  print_info()
+  print_input_levels()
   screen.update()
 end
 
 function print_pattern_status()
   screen.clear()
-  for index, is_recording in ipairs(currently_recording) do
+  for index, pattern in ipairs(patterns) do
     local vertical_offset = 7 * index
+    local is_recording = pattern.rec == 1
     screen.move(0, vertical_offset)
     if is_recording then
       screen.text(index)
     end
     screen.move(10, vertical_offset)
-    local step = patterns[index].step
-    if step > 0 then
-      screen.text(step)
+    local is_playing = pattern.play == 1
+    if pattern.step > 0 and pattern.count > 0 and is_playing then
+      screen.text(pattern.step)
+    end
+  end
+end
+
+function print_input_levels()
+  screen.move(64, 7)
+  screen.text("Channel 1: " .. input_levels.l)
+  screen.move(64, 14)
+  screen.text("Channel 2: " .. input_levels.r)
+end
+
+function print_info()
+  screen.move(64, 28)
+  screen.text("K2: toggle all")
+  screen.move(64, 35)
+  screen.text("K3: erase all")
+end
+
+function key(n, z)
+  if n == 2 and z == 1 then
+    for index, pattern in ipairs(patterns) do
+      if pattern.play == 1 then
+        pattern:stop()
+      else
+        pattern:start()
+      end
+    end
+  elseif n == 3 and z == 1 then
+    for index, pattern in ipairs(patterns) do
+      pattern:clear()
+      grid_redraw()
     end
   end
 end
